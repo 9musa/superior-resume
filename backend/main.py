@@ -1,10 +1,22 @@
 import os, io
 import fitz, docx2txt
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from contextlib import asynccontextmanager
 from pydantic import BaseModel
+from database import init_db_pool, get_pool
 import uuid
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db_pool() # runs once, before startup
+
+    yield
+
+    pool = await get_pool() # runs on shutdown
+    await pool.close()
+
+app = FastAPI(lifespan=lifespan)
 
 def validate(file_bytes: bytes, filename: str) -> tuple[bool, str]:
     ext = filename.split(".")[-1].lower()
@@ -50,7 +62,6 @@ def extract_text(file_bytes: bytes, filename: str) -> str:
         return docx2txt.process(file_stream).strip()
         
     return ""
-
 
 
 @app.get("/")
