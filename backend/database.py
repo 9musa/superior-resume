@@ -37,3 +37,15 @@ async def create_job(job_title: str, owner_id: str | None, parsed_text: str) -> 
 
 async def get_job(job_id: str):
     return await pool.fetchrow("SELECT * FROM jobs WHERE id = $1", job_id)
+
+async def update_job_status(job_id: str, status: str, result: str):
+    await pool.execute(
+        "UPDATE jobs SET status = $1, result = $2 WHERE id = $3",
+        status, result, job_id
+    )
+
+async def update_job_result(job_id: str, status: str, result_text: str, result_pdf: bytes | None = None):
+    await pool.execute(
+        "UPDATE jobs SET status = $1, result = $2, result_pdf = $3 WHERE id = $4",
+        status, result_text, result_pdf, job_id,
+    )
