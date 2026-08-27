@@ -23,3 +23,17 @@ async def create_user(email: str, password_hash: str) -> str:
         email, password_hash,
     )
     return str(row["id"])
+
+async def create_job(job_title: str, owner_id: str | None, parsed_text: str) -> str:
+    row = await pool.fetchrow(
+        """
+        INSERT INTO jobs (owner_id, job_title, parsed_text)
+        VALUES ($1, $2, $3)
+        RETURNING id
+        """,
+        owner_id, job_title, parsed_text,
+    )
+    return str(row["id"])
+
+async def get_job(job_id: str):
+    return await pool.fetchrow("SELECT * FROM jobs WHERE id = $1", job_id)

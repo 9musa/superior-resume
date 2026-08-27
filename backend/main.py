@@ -1,10 +1,12 @@
 import os, io
 import fitz, docx2txt
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from typing import Optional
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
-from database import init_db_pool, get_pool, get_user_by_email, create_user
+from database import init_db_pool, get_pool, get_user_by_email, create_user, create_job, get_job
 from security import hash_password, verify_password, create_access_token
+from dependencies import get_optional_user
 import uuid
 
 
@@ -36,8 +38,8 @@ def validate(file_bytes: bytes, filename: str) -> tuple[bool, str]:
             if len(doc) == 0:
                 return False, "PDF has no pages."
 
-            text_check = "".join([page.get_text() for page in doc[:2]])
-            if not text_check.strip():
+            text_check = "".join(doc[i].get_text() for i in range(min(2, len(doc))))
+            if not text_check.strip(): # something potentially wrong here
                 return False, "PDF has no readable text (likely a scanned image)."
 
             return True, "Valid PDF."
@@ -97,9 +99,10 @@ async def login(input: AuthInput):
     return {"access_token": token, "token_type": "bearer"}
 
 @app.post("/superior")
-async def enhanceResume(
+async def superior_resume(
     resume_file: UploadFile = File(),
     job_title: str = Form(),
+    user_id: Optional[str] = Depends(get_optional_user),
 ):
     file_bytes = await resume_file.read()
     is_valid, msg = validate(file_bytes, resume_file.filename)
@@ -109,10 +112,13 @@ async def enhanceResume(
     parsed_text = extract_text(file_bytes, resume_file.filename)
     
 
-    job_id = str(uuid.uuid4()) # temporary uuid for guests, will be saved on DB
+    job_id = await create_job(job_title, user_id, parsed_text) # temporary uuid for guests, will be saved on DB
     
     return {"job_id": job_id, "status": "processing"}
 
 @app.get("/superior/{job_id}")
-def get_superior_resume():
-    return
+async def get_superior_resume(job_id: str):
+    job = await get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    return dict(job) # converts asyncpg rec to a standard dict1
