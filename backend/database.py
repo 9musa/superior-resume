@@ -15,7 +15,7 @@ async def get_pool() -> asyncpg.Pool:
     return pool
 
 async def get_user_by_email(email: str):
-    return await pool.fetchrow("SELECT * FROM users WHERE email = $1")
+    return await pool.fetchrow("SELECT * FROM users WHERE email = $1", email)
 
 async def create_user(email: str, password_hash: str) -> str:
     row = await pool.fetchrow(

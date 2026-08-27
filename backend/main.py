@@ -3,7 +3,8 @@ import fitz, docx2txt
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
-from database import init_db_pool, get_pool
+from database import init_db_pool, get_pool, get_user_by_email, create_user
+from security import hash_password, verify_password, create_access_token
 import uuid
 
 
@@ -17,6 +18,12 @@ async def lifespan(app: FastAPI):
     await pool.close()
 
 app = FastAPI(lifespan=lifespan)
+
+
+class AuthInput(BaseModel):
+    email: str
+    password:str
+
 
 def validate(file_bytes: bytes, filename: str) -> tuple[bool, str]:
     ext = filename.split(".")[-1].lower()
@@ -67,6 +74,27 @@ def extract_text(file_bytes: bytes, filename: str) -> str:
 @app.get("/")
 def root():
     return {"status": "ok"} 
+
+@app.post("/auth/signup")
+async def signup(input: AuthInput):
+    existing = await get_user_by_email(input.email)
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered.")
+
+    password_hash = hash_password(input.password)
+    user_id = await create_user(input.email, password_hash)
+
+    token = create_access_token(user_id)
+    return {"access_token": token, "token_type": "bearer"}
+
+@app.post("/auth/login")
+async def login(input: AuthInput):
+    user = await get_user_by_email(input.email)
+    if not user or not verify_password(input.password, user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Invalid email or password.")
+
+    token = create_access_token(str(user["id"]))
+    return {"access_token": token, "token_type": "bearer"}
 
 @app.post("/superior")
 async def enhanceResume(
