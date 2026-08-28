@@ -6,6 +6,7 @@ from gemini import superiorise
 from typing import Optional
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import Response
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from database import init_db_pool, get_pool, get_user_by_email, create_user, create_job, get_job, update_job_result
@@ -25,6 +26,14 @@ async def lifespan(app: FastAPI):
     await pool.close()
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # vite port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class AuthInput(BaseModel):
