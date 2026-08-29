@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { superiorResume, getJobResult, getDownloadUrl } from "./api";
+import AuthForm from "./components/AuthForm"
+import AuthModal from "./components/AuthModal"
+import AccountMenu from "./components/AccountMenu"
 import './App.css'
 
 function App() {
@@ -8,6 +11,8 @@ function App() {
   const [jobId, setJobId] = useState(null)
   const [jobStatus, setJobStatus] = useState(null)
   const [error, setError] = useState(null)
+  const [authModal, setAuthModal] = useState(false)
+  const [authMode, setAuthMode] = useState("login")
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -28,10 +33,19 @@ function App() {
     }, 2000)
   }
 
+  function openAuth(mode) {
+    setAuthMode(mode)
+    setAuthModal(true)
+  }
+
   return (
-    <>
+    <div className="app-container">
       <div>
         <h1>Superior Resume</h1>
+        <AccountMenu onOpenAuth={openAuth} />
+        {authModal && (
+          <AuthModal mode={authMode} onClose={() => setAuthModal(false)} />
+        )}
         <form onSubmit={handleSubmit}>
           <input type="file" onChange={(e) => setFile(e.target.files[0])} />
           <textarea
@@ -48,7 +62,7 @@ function App() {
           )}
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

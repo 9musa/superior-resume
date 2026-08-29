@@ -1,3 +1,40 @@
+
+
+/*
+COLOR SCHEME
+  
+  Backgrounds
+  #3a435e  - page background (body)
+  #1e293b  - form / modal / dropdown surface
+  #0f172a  - input / textarea background
+
+  Text
+  #313e50  - body text
+  #e2e8f0  - input text, dropdown menu text
+  #94a3b8  - modal close icon (muted)
+  #ffffff  - button text, download link text
+
+  Borders
+  #334155  - input border, dropdown item hover bg
+
+  Actions (buttons / links)
+  #3b82f6  - primary button bg, input focus border
+  #2563eb  - primary button hover
+  #475569  - disabled button
+  #22c55e  - download link (success) bg
+  #16a34a  - download link hover
+
+  Overlays / shadows
+  rgba(15, 23, 42, 0.6)   - modal backdrop
+  rgba(0, 0, 0, 0.3)      - form / modal / dropdown box-shadow
+
+*/
+
+/*
+TO DO
+  template selection buttons
+*/
+
 body {
   background-color: #3a435e;
   color: #313e50;
@@ -23,6 +60,9 @@ form {
 }
 
 input[type="file"],
+input[type="email"],
+input[type="password"],
+input[type="text"],
 textarea {
   padding: 10px 12px;
   border-radius: 8px;
@@ -41,7 +81,7 @@ textarea {
 textarea:focus,
 input:focus {
   outline: none;
-  border-color: #3b82f6; /* highlight color on focus */
+  border-color: #3b82f6;
 }
 
 button {
@@ -87,4 +127,93 @@ a[download]:hover {
   flex-direction: column;
   align-content: center;
   align-items: center;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #1e293b;
+  padding: 32px;
+  border-radius: 12px;
+  position: relative;
+  min-width: 320px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.app-container {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 40px;
+}
+
+.account-menu {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: inline-block;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: #1e293b;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.dropdown button {
+  background: none;
+  border: none;
+  color: #e2e8f0;
+  padding: 10px 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdown button:hover {
+  background: #334155;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+#auth-form {
+  background: none;
+  box-shadow: none;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
