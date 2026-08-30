@@ -1,16 +1,5 @@
-import os
-import json
-from google.genai import types
-from dotenv import load_dotenv
-from google import genai
-from schemas import RESUME_SCHEMA
-
-load_dotenv()
-GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
-client = genai.Client(api_key=GEMINI_API_KEY)
-
-async def superiorise(resume_text: str, job_desc: str):
-    prompt = f"""You are a professional resume writer. Analyze the following text.
+def build_resume_prompt(resume_text: str, job_desc: str) -> str:
+    return f"""You are a professional resume writer. Analyze the following text.
 
 First, decide if this is actually resume/CV content (work history, education, 
 skills — a person describing their professional background). If it is NOT a 
@@ -35,14 +24,3 @@ put spoken languages into "skills".
 TEXT:
 {resume_text}
 """
-
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=RESUME_SCHEMA,
-        ),
-    )
-
-    return json.loads(response.text)

@@ -2,7 +2,7 @@ import os, io
 import fitz, docx2txt
 import json
 from google import genai
-from gemini import superiorise
+from ai_providers import superiorise_with_fallback
 from typing import Optional
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import Response
@@ -88,7 +88,7 @@ def extract_text(file_bytes: bytes, filename: str) -> str:
 
 async def superior_process(job_id: str, resume_text: str, job_desc: str):
     try:
-        data = await superiorise(resume_text, job_desc)
+        data = await superiorise_with_fallback(resume_text, job_desc)
 
         if not data.get("is_valid_resume", False):
             reason = data.get("rejection_reason", "The uploaded file doesn't appear to be a resume.")
