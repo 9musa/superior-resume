@@ -34,7 +34,12 @@ export async function superiorResume(file, jobDesc, token) {
         headers,
         body: formData,
     })
-    if (!res.ok) throw new Error("Upload failed")
+
+    if (!res.ok) {
+        const errorBody = await res.json().catch(() => null);
+        throw new Error(errorBody?.message || "Upload failed");
+    }
+
     return res.json()
 }
 

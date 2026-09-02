@@ -9,7 +9,7 @@ pool: asyncpg.Pool
 
 async def init_db_pool():
     global pool
-    pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=5)
+    pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=5, timeout=30, command_timeout=30)
 
 async def get_pool() -> asyncpg.Pool:
     return pool

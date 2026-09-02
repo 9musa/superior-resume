@@ -9,7 +9,7 @@ COLOR SCHEME
   #0f172a  - input / textarea background
 
   Text
-  #313e50  - body text
+  #ffffff  - body text
   #e2e8f0  - input text, dropdown menu text
   #94a3b8  - modal close icon (muted)
   #ffffff  - button text, download link text
@@ -35,16 +35,26 @@ TO DO
   template selection buttons
 */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
 body {
   background-color: #3a435e;
-  color: #313e50;
+  color: #FFFFFF;
   margin: 0;
-  font-family: 'Helvetica', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 h1 {
   text-align: center;
   font-size: 3.5rem;
+}
+
+/* temp fix font inconsistencies */
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
 }
 
 form {
@@ -105,6 +115,19 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.error-slot {
+  min-height: 1.2em;
+  margin: 8px 0;
+  text-align: center;
+  color: #ef4444;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.error-slot.visible {
+  opacity: 1;
+}
+
 a[download] {
   display: inline-block;
   margin-top: 12px;
@@ -159,6 +182,11 @@ a[download]:hover {
   cursor: pointer;
 }
 
+.modal-close:hover {
+  color: #94a3b8;
+  background: none;
+}
+
 .app-container {
   position: relative;
   min-height: 100vh;
@@ -204,6 +232,7 @@ a[download]:hover {
 }
 
 .auth-form {
+  font-family: inherit;
   display: flex;
   flex-direction: column;
   align-items: center;

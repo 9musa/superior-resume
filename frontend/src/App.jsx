@@ -16,11 +16,27 @@ function App() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    const token = localStorage.getItem("access_token")
-    const res = await superiorResume(file, jobDesc, token)
-    setJobId(res.job_id)
-    setJobStatus(res.status)
-    pollJobStatus(res.job_id)
+    setError(null)
+
+    if (!file) {
+      setError("Please select a resume file to upload.")
+      return
+    }
+
+    if (!jobDesc) {
+      setError("Please enter a job description.")
+      return
+    }
+
+    try {
+      const token = localStorage.getItem("access_token")
+      const res = await superiorResume(file, jobDesc, token)
+      setJobId(res.job_id)
+      setJobStatus(res.status)
+      pollJobStatus(res.job_id)
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   async function pollJobStatus(jobId) {
@@ -53,6 +69,7 @@ function App() {
             value={jobDesc}
             onChange={(e) => setJobDesc(e.target.value)}
           />
+          <p className={`error-slot ${error ? "visible" : ""}`}>{error}</p>
           <button type="submit">Go</button>
         </form>
         <div id="result-section">

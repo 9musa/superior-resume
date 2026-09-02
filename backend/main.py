@@ -4,8 +4,8 @@ import json
 from google import genai
 from ai_providers import superiorise_with_fallback
 from typing import Optional
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, BackgroundTasks
-from fastapi.responses import Response
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, BackgroundTasks, Request
+from fastapi.responses import Response, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
@@ -13,7 +13,7 @@ from database import init_db_pool, get_pool, get_user_by_email, create_user, cre
 from security import hash_password, verify_password, create_access_token
 from templates import render_resume_pdf, TEMPLATES
 from dependencies import get_optional_user
-import uuid
+from exceptions import ResumeAppError, FileValidationError, NotAResumeError, JobNotFoundError, JobNotReadyError, AuthError
 
 
 @asynccontextmanager
@@ -35,43 +35,50 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(ResumeAppError)
+async def resume_app_error_handler(request: Request, exc: ResumeAppError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error_code": exc.error_code, "message": exc.message},
+    )
+
 
 class AuthInput(BaseModel):
     email: str
     password:str
 
 
-def validate(file_bytes: bytes, filename: str) -> tuple[bool, str]: # EXTENSION EXCEPTIONS
+def validate(file_bytes: bytes, filename: str) -> None:
     ext = filename.split(".")[-1].lower()
 
     if ext == "pdf":
         try:
             doc = fitz.open(stream=file_bytes, filetype="pdf")
-            if doc.is_encrypted:
-                return False, "PDF is password protected."
-            if len(doc) == 0:
-                return False, "PDF has no pages."
-
-            text_check = "".join(doc[i].get_text() for i in range(min(2, len(doc))))
-            if not text_check.strip():
-                return False, "PDF has no readable text (likely a scanned image)."
-
-            return True, "Valid PDF."
         except Exception as e:
-            return False, f"Corrupted or invalid PDF structure, {str(e)}"
+            raise FileValidationError(f"Corrupted or invalid PDF structure: {e}")
+
+        if doc.is_encrypted:
+            raise FileValidationError("PDF is password protected.")
+        if len(doc) == 0:
+            raise FileValidationError("PDF has no pages.")
+
+        text_check = "".join(doc[i].get_text() for i in range(min(2, len(doc))))
+        if not text_check.strip():
+            raise FileValidationError("PDF has no readable text (likely a scanned image).")
+        return
 
     elif ext == "docx":
         try:
             file_stream = io.BytesIO(file_bytes)
             text_check = docx2txt.process(file_stream)
-            if not text_check.strip():
-                return False, "DOCX file is empty."
-
-            return True, "Valid DOCX."
         except Exception as e:
-            return False, f"Corrupted or invalid DOCX structure: {str(e)}"
+            raise FileValidationError(f"Corrupted or invalid DOCX structure: {e}")
 
-    return False, f"Unsupported file extension: .{ext}"
+        if not text_check.strip():
+            raise FileValidationError("DOCX file is empty.")
+        return
+
+    raise FileValidationError(f"Unsupported file extension: .{ext}")
 
 def extract_text(file_bytes: bytes, filename: str) -> str:
     ext = filename.split(".")[-1].lower()
@@ -92,12 +99,14 @@ async def superior_process(job_id: str, resume_text: str, job_desc: str):
 
         if not data.get("is_valid_resume", False):
             reason = data.get("rejection_reason", "The uploaded file doesn't appear to be a resume.")
-            await update_job_result(job_id, status="failed", result_text=reason)
-            return
+            raise NotAResumeError(reason)
 
         await update_job_result(job_id, status="done", result_text=json.dumps(data))
+
+    except ResumeAppError as e:
+        await update_job_result(job_id, status="failed", result_text=e.message)
     except Exception as e:
-        await update_job_result(job_id, status="failed", result_text=str(e))
+        await update_job_result(job_id, status="failed", result_text=f"Unexpected error: {e}")
 
 @app.get("/")
 def root():
@@ -132,9 +141,7 @@ async def superior_resume(
     user_id: Optional[str] = Depends(get_optional_user),
 ):
     file_bytes = await resume_file.read()
-    is_valid, msg = validate(file_bytes, resume_file.filename)
-    if not is_valid:
-        raise HTTPException(status_code=400, detail=msg) # INVALID RESUME EXCEPTION
+    validate(file_bytes, resume_file.filename)
 
     parsed_text = extract_text(file_bytes, resume_file.filename)
 

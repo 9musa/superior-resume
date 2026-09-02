@@ -39,10 +39,10 @@ function AccountMenu({ onOpenAuth }) {
                     ) : (
                         <>
                             <button onClick={() => { onOpenAuth("login"); setMenuOpen(false) }}>
-                                Login
+                                Log In
                             </button>
                             <button onClick={() => { onOpenAuth("signup"); setMenuOpen(false) }}>
-                                Signup
+                                Sign Up
                             </button>
                         </>
                     )}
