@@ -7,6 +7,8 @@
 
 AI powered resume enhancer.
 
+**[Live demo → superior-resume.vercel.app](https://superior-resume.vercel.app)**
+
 ## Overview
 Superior Resume analyses your resume through LLMs and renders a new one better suited to your target role.
 
